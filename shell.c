@@ -1,6 +1,14 @@
 /************************************************
+<<<<<<< HEAD
 *
 *Name: Steven Barry 
+=======
+<<<<<<< HEAD
+*
+=======
+*Name: Steven Barry 
+>>>>>>> fd42de9f29582ce1a1d8fb82b80342a77f25d4a5
+>>>>>>> c43304907eb69de325d85bc425e0556e0136e170
 *Assignment: Simple Shell Exercise
 *
 *
@@ -12,6 +20,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> c43304907eb69de325d85bc425e0556e0136e170
 #include <sys/wait.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -67,6 +79,13 @@ int forkProcess()
 
 }/* end function */
 
+<<<<<<< HEAD
+=======
+
+=======
+>>>>>>> fd42de9f29582ce1a1d8fb82b80342a77f25d4a5
+
+>>>>>>> c43304907eb69de325d85bc425e0556e0136e170
 int main(int argc, char *argv[])
 {
 	/* chars used to determine values which are to be excluded using token delimiter */ 
@@ -74,22 +93,43 @@ int main(int argc, char *argv[])
 	char str[512];
 	char *token;
 	int compare = 0;
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> c43304907eb69de325d85bc425e0556e0136e170
 	/*char pointer array */
 	char *value;
 	char *tokArrayFilename[50];
 	int i = 0;
 	int l = 0;
+<<<<<<< HEAD
 
 	/*char pointer array
 	char *value;*/
 
+=======
+=======
+	int i;
+	/*char pointer array */
+	char *value;
+
+>>>>>>> fd42de9f29582ce1a1d8fb82b80342a77f25d4a5
+>>>>>>> c43304907eb69de325d85bc425e0556e0136e170
 	/* create infinite loop */
 	while(1)
 	{
 		printf(">");
 		value = fgets(str, 512, stdin);
 		
+<<<<<<< HEAD
 
+=======
+<<<<<<< HEAD
+		
+
+=======
+>>>>>>> fd42de9f29582ce1a1d8fb82b80342a77f25d4a5
+>>>>>>> c43304907eb69de325d85bc425e0556e0136e170
 		if(value == NULL)
 		{
 			exit(0);
@@ -103,7 +143,11 @@ int main(int argc, char *argv[])
 		token = strtok(str, tok);
 
 		/* print string until NULL reached */
+<<<<<<< HEAD
 
+=======
+<<<<<<< HEAD
+>>>>>>> c43304907eb69de325d85bc425e0556e0136e170
 		while(token != NULL && i <= 50)
 		{
 			printf("<%s>\n", token);
@@ -131,14 +175,22 @@ int main(int argc, char *argv[])
 
 		l = 0;
 
+<<<<<<< HEAD
 
+=======
+=======
+>>>>>>> c43304907eb69de325d85bc425e0556e0136e170
 		while(token != NULL)
 		{
 			printf("<%s>\n", token);
 			token = strtok(NULL, tok);
 		
 		}/* end while */
+<<<<<<< HEAD
 
+=======
+>>>>>>> fd42de9f29582ce1a1d8fb82b80342a77f25d4a5
+>>>>>>> c43304907eb69de325d85bc425e0556e0136e170
 
 		compare = strcmp(str, "exit"); 
 
