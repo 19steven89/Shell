@@ -17,11 +17,11 @@
 #include <unistd.h>
 
 /* function declarations */
-int forkProcess();
+int forkProcess(char *token);
 
 
 
-int forkProcess()
+int forkProcess(char *token)
 {
 	pid_t pid, pid1;
 
@@ -42,9 +42,7 @@ int forkProcess()
 		/*process B */
 		printf("Child process PID1 B: %d", pid1);
 
-		int execvp(const char *file, char /* fill rest of memory to default value */
-	
-	/* end while */*const argv[]);
+		int execvp(const char *file, char *const argv[]);
 		
 	}/* end else if */
 	else
@@ -79,14 +77,39 @@ int main(int argc, char *argv[])
 	char *tokArrayFilename[50];
 	int i = 0;
 	int l = 0;
+	char cwd[300];
 
-	/*char pointer array
-	char *value;*/
+	char const* storePath = getenv("PATH");
+	if(storePath == NULL)
+	{
+		printf("Error! Path Not Found");
+	}/* end if */
+	else
+	{
+	   	printf("storePath: %s\n", storePath);
+	}/* end else */
+
+
+	chdir(storePath);
+
+	
+
+	  if (chdir("/tmp") != 0)
+	    perror("chdir() error()");
+	  else 
+	  {
+	    if (getcwd(cwd, sizeof(cwd)) == NULL)
+	      perror("getcwd() error");
+	    else
+	      printf("current working directory is: %s\n", cwd);
+	  }
+
 
 	/* create infinite loop */
 	while(1)
 	{
 		printf(">");
+
 		value = fgets(str, 512, stdin);
 		
 
@@ -113,6 +136,7 @@ int main(int argc, char *argv[])
 			token = strtok(NULL, tok);
 			i++;
 			
+			int execvp(const char *file, char *const argv[]);
 		
 		}/* end while */
 		
@@ -126,6 +150,7 @@ int main(int argc, char *argv[])
 			printf("%d:%s ", l, tokArrayFilename[l]);
 			l++;
 			printf("\n");
+			
 
 		}/* end while */
 
@@ -137,6 +162,8 @@ int main(int argc, char *argv[])
 			printf("<%s>\n", token);
 			token = strtok(NULL, tok);
 		
+			forkProcess(token);
+
 		}/* end while */
 
 
@@ -147,7 +174,7 @@ int main(int argc, char *argv[])
 		{
 			exit(0);
 
-		}/*end if*/
+		}/*end if*/		
 	
 	}/*end while */
 	
