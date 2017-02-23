@@ -17,55 +17,17 @@
 #include <unistd.h>
 
 /* function declarations */
+void savePath(char *str, char const* storePath);
 void forkProcess(char* arguement, char* paramaters[]);
 void changeHomeDir(char *str);
 void setPathDir(char *setP);
 
 
-void forkProcess(char* arguement, char* paramaters[])
+
+void savePath(char *str, char const* storePath)
 {
-	
-	pid_t pid = fork();
-
-	/*child process*/
-	if (pid == 0) {
-		printf("Child: %d\n", pid);
-		if (execvp(arguement,paramaters) == -1 )
-			{
-				perror (arguement);
-			}
-		exit(0);
-	}
-	/*parent process*/
-	if (pid > 0) {
-		wait(0);
-		printf("Parent: %d\n", pid);
-	}
-
-}/* end function */
-
-
-
-void changeHomeDir(char *str)
-{
+	/*char const* setPath;*/
 	char cwd[300];
-	char *setP;
-
-	char const* storePath = getenv("PATH");
-	char const* setPath;
-	int compare = 0;
-
-	setP = fgets(str, 512, stdin);
-
-	if(strcmp(setP, "\0") == 0)
-	{
-		printf("\nError occured, please specify path name.\n");
-
-	}/* end if*/
-	else
-	{
-		setPathDir(setP);
-	}/* end else */
 
 	if(storePath == NULL)
 	{
@@ -99,6 +61,52 @@ void changeHomeDir(char *str)
 	   }/* end outer else */
 
 
+}/* end method */
+
+void forkProcess(char* argument, char* paramaters[])
+{
+	
+	pid_t pid = fork();
+
+	/*child process*/
+	if (pid == 0) {
+		printf("Child: %d\n", pid);
+		if (execvp(argument,paramaters) == -1 )
+		{
+			perror (argument);
+		}
+
+		exit(0);
+	}/* end if */
+
+	/*parent process*/
+	if (pid > 0) 
+	{
+		wait(0);
+		printf("Parent: %d\n", pid);
+	}/* end if */
+
+}/* end function */
+
+
+
+void changeHomeDir(char *str)
+{
+	char *setP;
+
+	int compare = 0;
+
+	setP = fgets(str, 512, stdin);
+
+	if(strcmp(setP, "\0") == 0)
+	{
+		printf("\nError occured, please specify path name.\n");
+
+	}/* end if*/
+	else
+	{
+		setPathDir(setP);
+	}/* end else */
 
 }/* end method */
 
@@ -122,7 +130,11 @@ int main(int argc, char *argv[])
 	char *tokArrayFilename[50];
 	int i = 0;
 	int l = 0;
+	/* var stores the original path and will restore to original on program exit */
+	char const* storePath = getenv("PATH");
 
+
+	savePath(str, storePath);
 
 	/* create infinite loop */
 	while(1)
@@ -154,16 +166,16 @@ int main(int argc, char *argv[])
 
 			token = strtok(NULL, tok);
 			i++;
-			
-		
+				
 		}/* end while */
 
 		tokArrayFilename[i] = NULL;
 
+		/* if user enters NULL value, ensure program continues */
 		if(tokArrayFilename[0] == NULL)
 		{
 			continue;
-		}
+		}/* end if*/
 
 		i = 0;
 
@@ -181,21 +193,37 @@ int main(int argc, char *argv[])
 		{
 			if(tokArrayFilename[1] == NULL)
 			{
+				setenv(storePath, "PATH", 0);
+				printf("The current path is: %s\n", storePath);
+
 				exit(0);
-			}
+			}/* end if */
+
 			printf("%s is not a valid command\n", tokArrayFilename[1]);
+
 		}/*end if*/
 
 		else if(strcmp(tokArrayFilename[0], "getpath") == 0)
 		{
+				printf("else if: getpath");
+				savePath(tokArrayFilename[1], storePath);
+		}/* end else if */
+		else if(strcmp(tokArrayFilename[0], "setpath") == 0)
+		{
+				printf("else if: setpath");
 				changeHomeDir(tokArrayFilename[1]);
-		}
+		}/* end else if*/
 		else
 		{
 			forkProcess(tokArrayFilename[0],tokArrayFilename);
-		}
+		}/*end else*/
+
 	}/*end while */
 
+
+	setenv(storePath, "PATH", 0);
+	printf("The current path is: %s", storePath);
+	
 	return 0;
 
 }/* end main */
