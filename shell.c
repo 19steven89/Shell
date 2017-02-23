@@ -113,7 +113,10 @@ void changeHomeDir(char *str)
 
 void setPathDir(char *setP)
 {
-	setenv("PATH", setP, 1);
+	setenv("PATH", setP, 0);
+
+	char *currPath = getenv("PATH");
+	printf("currPath: %s\n", currPath);
 	
 }/* end function */
 
@@ -205,12 +208,12 @@ int main(int argc, char *argv[])
 
 		else if(strcmp(tokArrayFilename[0], "getpath") == 0)
 		{
-				printf("else if: getpath");
+				printf("\nelse if: getpath\n");
 				savePath(tokArrayFilename[1], storePath);
 		}/* end else if */
 		else if(strcmp(tokArrayFilename[0], "setpath") == 0)
 		{
-				printf("else if: setpath");
+				printf("\nelse if: setpath\n");
 				changeHomeDir(tokArrayFilename[1]);
 		}/* end else if*/
 		else
