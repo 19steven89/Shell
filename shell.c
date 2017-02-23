@@ -1,5 +1,4 @@
 /************************************************
-*
 *Name: Steven Barry 
 *Assignment: Simple Shell Exercise
 *
@@ -9,6 +8,7 @@
 *************************************************
 */
 
+/* library files required for program execution */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -17,53 +17,98 @@
 #include <unistd.h>
 
 /* function declarations */
-int forkProcess(char *token);
+void forkProcess(char* arguement, char* paramaters[]);
+void changeHomeDir(char *str);
+void setPathDir(char *setP);
 
 
-
-int forkProcess(char *token)
+void forkProcess(char* arguement, char* paramaters[])
 {
-	pid_t pid, pid1;
-
-	pid = fork();
-
-	if(pid < 0)
-	{
-		fprintf(stderr, "Fork failed in execution");
-
-	}/* end if */
-	else if(pid == 0)
-	{
-		
-		pid1 = getpid();
-		/*process A */
-		printf("Child process PID A: %d", pid);
-		
-		/*process B */
-		printf("Child process PID1 B: %d", pid1);
-
-		int execvp(const char *file, char *const argv[]);
-		
-	}/* end else if */
-	else
-	{
-		pid1 = getpid();
-
-		/*process C */
-		printf("Parent process PID C: %d", pid);
-		
-		/*process D*/
-		printf("Parent process PID1 D: %d", pid1);
 	
-		/* wait used for a change in child process */
-		wait(NULL);
-		
-	}/* end else */
+	pid_t pid = fork();
 
-	return 0;
-
+	/*child process*/
+	if (pid == 0) {
+		printf("Child: %d\n", pid);
+		if (execvp(arguement,paramaters) == -1 )
+			{
+				perror (arguement);
+			}
+		exit(0);
+	}
+	/*parent process*/
+	if (pid > 0) {
+		wait(0);
+		printf("Parent: %d\n", pid);
+	}
 
 }/* end function */
+
+
+
+void changeHomeDir(char *str)
+{
+	char cwd[300];
+	char *setP;
+
+	char const* storePath = getenv("PATH");
+	char const* setPath;
+	int compare = 0;
+
+	setP = fgets(str, 512, stdin);
+
+	if(strcmp(setP, "\0") == 0)
+	{
+		printf("\nError occured, please specify path name.\n");
+
+	}/* end if*/
+	else
+	{
+		setPathDir(setP);
+	}/* end else */
+
+	if(storePath == NULL)
+	{
+
+		printf("\nError! Path Not Found");
+
+	}/* end if */
+	else
+	{
+	   	printf("\nPath directories where exe files are located: %s\n", storePath);
+	}/* end else */
+
+
+	  if (chdir(getenv("HOME")) != 0)
+	  {
+		     perror("\nChdir() Error occured, please recheck home directory has been altered correctly.");
+	  }/* end outer if */
+	  else 
+	  {
+		    if (getcwd(cwd, sizeof(cwd)) == NULL)
+		     {	
+			perror("\ngetcwd() Error, cwd size is null, recheck working home directory");
+		    
+		     }/* end if*/	
+		     else
+		     {
+	      		printf("\ncurrent working directory is: %s\n", cwd);
+
+		     }/* end else*/
+
+	   }/* end outer else */
+
+
+
+}/* end method */
+
+
+void setPathDir(char *setP)
+{
+	setenv("PATH", setP, 1);
+	
+}/* end function */
+
 
 int main(int argc, char *argv[])
 {
@@ -77,39 +122,12 @@ int main(int argc, char *argv[])
 	char *tokArrayFilename[50];
 	int i = 0;
 	int l = 0;
-	char cwd[300];
-
-	char const* storePath = getenv("PATH");
-	if(storePath == NULL)
-	{
-		printf("Error! Path Not Found");
-	}/* end if */
-	else
-	{
-	   	printf("storePath: %s\n", storePath);
-	}/* end else */
-
-
-	chdir(storePath);
-
-	
-
-	  if (chdir("/tmp") != 0)
-	    perror("chdir() error()");
-	  else 
-	  {
-	    if (getcwd(cwd, sizeof(cwd)) == NULL)
-	      perror("getcwd() error");
-	    else
-	      printf("current working directory is: %s\n", cwd);
-	  }
 
 
 	/* create infinite loop */
 	while(1)
 	{
 		printf(">");
-
 		value = fgets(str, 512, stdin);
 		
 
@@ -120,6 +138,7 @@ int main(int argc, char *argv[])
 		}/* end if */
 
 		/* surround string with chars to demonstrated beginning and end of words */
+		
 		printf("<%s>\n", str);
 		
 		
@@ -136,48 +155,47 @@ int main(int argc, char *argv[])
 			token = strtok(NULL, tok);
 			i++;
 			
-			int execvp(const char *file, char *const argv[]);
 		
 		}/* end while */
-		
+
 		tokArrayFilename[i] = NULL;
-	
-		/*strcpy(tokArrayFilename[i], NULL);*/
-		i = 0;
 
-		while(l < 50 && tokArrayFilename[l] != NULL)
+		if(tokArrayFilename[0] == NULL)
 		{
-			printf("%d:%s ", l, tokArrayFilename[l]);
-			l++;
-			printf("\n");
-			
+			continue;
+		}
 
-		}/* end while */
-
-		l = 0;
-
+		i = 0;
 
 		while(token != NULL)
 		{
 			printf("<%s>\n", token);
 			token = strtok(NULL, tok);
 		
-			forkProcess(token);
-
 		}/* end while */
 
-
-		compare = strcmp(str, "exit"); 
+		compare = strcmp(tokArrayFilename[0], "exit"); 
 
 		/* exit loop if user enters "exit" */
-		if(compare == 0)
+		if(strcmp(tokArrayFilename[0], "exit") == 0)
 		{
-			exit(0);
+			if(tokArrayFilename[1] == NULL)
+			{
+				exit(0);
+			}
+			printf("%s is not a valid command\n", tokArrayFilename[1]);
+		}/*end if*/
 
-		}/*end if*/		
-	
+		else if(strcmp(tokArrayFilename[0], "getpath") == 0)
+		{
+				changeHomeDir(tokArrayFilename[1]);
+		}
+		else
+		{
+			forkProcess(tokArrayFilename[0],tokArrayFilename);
+		}
 	}/*end while */
-	
+
 	return 0;
 
 }/* end main */
