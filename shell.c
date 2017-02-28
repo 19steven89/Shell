@@ -15,23 +15,21 @@
 #include <sys/wait.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <limits.h>
 
 /* function declarations */
 void savePath(char *str, char const* storePath);
+void chdirToHome();
 void forkProcess(char* arguement, char* paramaters[]);
 void changeHomeDir(char *str);
 void setPathDir(char *setP);
-
+void changeDirectory(char *str);
 
 
 void savePath(char *str, char const* storePath)
 {
-	/*char const* setPath;*/
-	char cwd[300];
-
 	if(storePath == NULL)
 	{
-
 		printf("\nError! Path Not Found");
 
 	}/* end if */
@@ -40,8 +38,14 @@ void savePath(char *str, char const* storePath)
 	   	printf("\nPath directories where exe files are located: %s\n", storePath);
 	}/* end else */
 
+}/* end method */
 
-	  if (chdir(getenv("HOME")) != 0)
+
+void chdirToHome()
+{
+	char cwd[300];
+
+ 	  if (chdir(getenv("HOME")) != 0)
 	  {
 		     perror("\nChdir() Error occured, please recheck home directory has been altered correctly.");
 	  }/* end outer if */
@@ -59,32 +63,6 @@ void savePath(char *str, char const* storePath)
 		     }/* end else*/
 
 	   }/* end outer else */
-
-
-}/* end method */
-
-void forkProcess(char* argument, char* paramaters[])
-{
-	
-	pid_t pid = fork();
-
-	/*child process*/
-	if (pid == 0) {
-		printf("Child: %d\n", pid);
-		if (execvp(argument,paramaters) == -1 )
-		{
-			perror (argument);
-		}
-
-		exit(0);
-	}/* end if */
-
-	/*parent process*/
-	if (pid > 0) 
-	{
-		wait(0);
-		printf("Parent: %d\n", pid);
-	}/* end if */
 
 }/* end function */
 
@@ -120,6 +98,44 @@ void setPathDir(char *setP)
 	
 }/* end function */
 
+void forkProcess(char* argument, char* paramaters[])
+{
+	
+	pid_t pid = fork();
+
+	/*child process*/
+	if (pid == 0) {
+		printf("Child: %d\n", pid);
+		if (execvp(argument,paramaters) == -1 )
+		{
+			perror (argument);
+		}/* end inner if */
+
+		exit(0);
+	}/* end if */
+
+	/*parent process*/
+	if (pid > 0) 
+	{
+		wait(0);
+		printf("Parent: %d\n", pid);
+	}/* end if */
+
+}/* end function */
+
+
+
+void changeDirectory(char *str)
+{
+	printf("**TEST** now in changeDirectory function, %s", str);
+	
+
+	/*if(str[1] == 0)*/
+
+
+
+}/* end function */
+
 
 int main(int argc, char *argv[])
 {
@@ -138,11 +154,12 @@ int main(int argc, char *argv[])
 
 
 	savePath(str, storePath);
+	chdirToHome();
 
 	/* create infinite loop */
 	while(1)
 	{
-		printf(">");
+		printf("\n>");
 		value = fgets(str, 512, stdin);
 		
 
@@ -152,10 +169,9 @@ int main(int argc, char *argv[])
 
 		}/* end if */
 
-		/* surround string with chars to demonstrated beginning and end of words */
+		/* surround string with chars to demonstrate beginning and end of words */
 		
 		printf("<%s>\n", str);
-		
 		
 		token = strtok(str, tok);
 
@@ -215,6 +231,11 @@ int main(int argc, char *argv[])
 		{
 				printf("\nelse if: setpath\n");
 				changeHomeDir(tokArrayFilename[1]);
+		}/* end else if*/
+		else if(strcmp(tokArrayFilename[0], "cd") == 0)
+		{
+				printf("\nelse if: cd\n");
+				changeDirectory(tokArrayFilename[1]);
 		}/* end else if*/
 		else
 		{
