@@ -126,21 +126,15 @@ void changeDirectory(char *str)
 	if(str == NULL)
 	{
 		chdir(getenv("HOME"));
-	}
+	}/* end if */
 	else
 	{
 		chdir(str);
-	}
-	if (getcwd(cwd, sizeof(cwd)) == NULL)
-		     {	
-			perror("\ngetcwd() Error, cwd size is null, recheck working home directory");
-		    
-		     }/* end if*/	
-		     else
-		     {
-	      		printf("\ncurrent working directory is: %s\n", cwd);
+	}/* end else */
+	
+	printf("\ncurrent working directory is: %s\n", getcwd(cwd, sizeof(cwd)));
 
-		     }
+
 }/* end function */
 
 void exitProgram(char const* storePath)
