@@ -1,5 +1,5 @@
 /************************************************
-*Name: Steven Barry 
+*Name: Steven Barry Daniel Kashani
 *Assignment: Simple Shell Exercise
 *
 *
@@ -18,7 +18,7 @@
 #include <limits.h>
 
 /* function declarations */
-void savePath(char *str, char const* storePath);
+void printPath();
 void chdirToHome();
 void forkProcess(char* arguement, char* paramaters[]);
 void changeHomeDir(char *str);
@@ -26,16 +26,16 @@ void setPathDir(char *setP);
 void changeDirectory(char *str);
 
 
-void savePath(char *str, char const* storePath)
+void printPath()
 {
-	if(storePath == NULL)
+	if(getenv("PATH") == NULL)
 	{
 		printf("\nError! Path Not Found");
 
 	}/* end if */
 	else
 	{
-	   	printf("\nPath directories where exe files are located: %s\n", storePath);
+	   	printf("\nPath directories where exe files are located: %s\n", getenv("PATH"));
 	}/* end else */
 
 }/* end method */
@@ -68,33 +68,28 @@ void chdirToHome()
 
 
 
-void changeHomeDir(char *str)
+void changeHomeDir(char* str)
 {
-	char *setP;
-
 	int compare = 0;
 
-	setP = fgets(str, 512, stdin);
-
-	if(strcmp(setP, "\0") == 0)
+	if(strcmp(str, "\0") == 0)
 	{
 		printf("\nError occured, please specify path name.\n");
 
 	}/* end if*/
 	else
 	{
-		setPathDir(setP);
+		setPathDir(str);
 	}/* end else */
 
 }/* end method */
 
 
-void setPathDir(char *setP)
+void setPathDir(char* setP)
 {
-	setenv("PATH", setP, 0);
+	setenv("PATH", setP, 1);
 
-	char *currPath = getenv("PATH");
-	printf("currPath: %s\n", currPath);
+	printf("currPath: %s\n", getenv("PATH"));
 	
 }/* end function */
 
@@ -127,15 +122,27 @@ void forkProcess(char* argument, char* paramaters[])
 
 void changeDirectory(char *str)
 {
-	printf("**TEST** now in changeDirectory function, %s", str);
+	char cwd[300];
+	if(str == NULL)
+	{
+		chdir(getenv("HOME"));
+	}/* end if */
+	else
+	{
+		chdir(str);
+	}/* end else */
 	
-
-	/*if(str[1] == 0)*/
-
+	printf("\ncurrent working directory is: %s\n", getcwd(cwd, sizeof(cwd)));
 
 
 }/* end function */
 
+void exitProgram(char const* storePath)
+{
+	setenv("PATH", storePath, 1);
+	printf("The current path is: %s\n", getenv("PATH"));
+	exit(0);
+}
 
 int main(int argc, char *argv[])
 {
@@ -153,7 +160,7 @@ int main(int argc, char *argv[])
 	char const* storePath = getenv("PATH");
 
 
-	savePath(str, storePath);
+	printPath();
 	chdirToHome();
 
 	/* create infinite loop */
@@ -165,7 +172,7 @@ int main(int argc, char *argv[])
 
 		if(value == NULL)
 		{
-			exit(0);
+			exitProgram(storePath);
 
 		}/* end if */
 
@@ -212,10 +219,7 @@ int main(int argc, char *argv[])
 		{
 			if(tokArrayFilename[1] == NULL)
 			{
-				setenv(storePath, "PATH", 0);
-				printf("The current path is: %s\n", storePath);
-
-				exit(0);
+				exitProgram(storePath);
 			}/* end if */
 
 			printf("%s is not a valid command\n", tokArrayFilename[1]);
@@ -224,18 +228,36 @@ int main(int argc, char *argv[])
 
 		else if(strcmp(tokArrayFilename[0], "getpath") == 0)
 		{
-				printf("\nelse if: getpath\n");
-				savePath(tokArrayFilename[1], storePath);
+			if(tokArrayFilename[1] == NULL)
+			{
+				printPath();
+			}/*end if */
+			else 
+			{
+				printf("Error: This command takes no arguements\n");
+			}/*end else */
 		}/* end else if */
 		else if(strcmp(tokArrayFilename[0], "setpath") == 0)
 		{
-				printf("\nelse if: setpath\n");
+			if(tokArrayFilename[1] != NULL && tokArrayFilename[2] == NULL)
+			{
 				changeHomeDir(tokArrayFilename[1]);
+			}/*end if */
+			else 
+			{
+				printf("Error: This command takes one arguement\n");
+			}/*end else */
 		}/* end else if*/
 		else if(strcmp(tokArrayFilename[0], "cd") == 0)
 		{
-				printf("\nelse if: cd\n");
+			if(tokArrayFilename[1] != NULL && tokArrayFilename[2] == NULL || tokArrayFilename[1] == NULL)
+			{
 				changeDirectory(tokArrayFilename[1]);
+			}/*end if */
+			else
+			{
+				printf("Error: This command takes one arguement\n");
+			}/*end else */
 		}/* end else if*/
 		else
 		{
@@ -244,11 +266,6 @@ int main(int argc, char *argv[])
 
 	}/*end while */
 
-
-	setenv(storePath, "PATH", 0);
-	printf("The current path is: %s", storePath);
-	
 	return 0;
 
 }/* end main */
-
