@@ -20,6 +20,7 @@
 
 /* notes for task 5: use an array of structs. use no Modulo 20 == index of array to cycle through history a set No of times i.e 20*/
 
+
 /* function declarations */
 void printPath();
 void chdirToHome();
@@ -96,6 +97,7 @@ void setPathDir(char* setP)
 	
 }/* end function */
 
+
 void forkProcess(char* argument, char* paramaters[])
 {
 	
@@ -147,8 +149,32 @@ void exitProgram(char const* storePath)
 	printf("The current path is: %s\n", getenv("PATH"));
 	exit(0);
 
-}/* end function */
 
+void forkProcess(char* argument, char* paramaters[])
+{
+	
+	pid_t pid = fork();
+
+	/*child process*/
+	if (pid == 0) {
+		printf("Child: %d\n", pid);
+		if (execvp(argument,paramaters) == -1 )
+		{
+			perror (argument);
+		}/* end inner if */
+
+		exit(0);
+	}/* end if */
+
+	/*parent process*/
+	if (pid > 0) 
+	{
+		wait(0);
+		printf("Parent: %d\n", pid);
+	}/* end if */
+
+
+}/* end function */
 
 
 struct historyCycle
@@ -158,6 +184,30 @@ struct historyCycle
 
 };
 
+
+void changeDirectory(char *str)
+{
+	char cwd[300];
+	if(str == NULL)
+	{
+		chdir(getenv("HOME"));
+	}/* end if */
+	else
+	{
+		chdir(str);
+	}/* end else */
+	
+	printf("\ncurrent working directory is: %s\n", getcwd(cwd, sizeof(cwd)));
+
+
+}/* end function */
+
+void exitProgram(char const* storePath)
+{
+	setenv("PATH", storePath, 1);
+	printf("The current path is: %s\n", getenv("PATH"));
+	exit(0);
+}/* end function */
 
 
 int main(int argc, char *argv[])
@@ -275,6 +325,7 @@ int main(int argc, char *argv[])
 				printf("Error: This command takes one arguement\n");
 			}/*end else */
 		}/* end else if*/
+
 		else if(strcmp(tokArrayFilename[0], "history") == 0)
 		{
 			if(tokArrayFilename[1] != NULL && tokArrayFilename[2] == NULL)
@@ -297,12 +348,11 @@ int main(int argc, char *argv[])
 				printf("Error: This is not a valid command\n");
 			}/*end else */
 		}/* end else if */
+
 		else
 		{
 			forkProcess(tokArrayFilename[0],tokArrayFilename);
 		}/*end else*/
-
-
 
 
 	}/*end while */
