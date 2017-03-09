@@ -17,6 +17,9 @@
 #include <unistd.h>
 #include <limits.h>
 
+
+/* notes for task 5: use an array of structs. use no Modulo 20 == index of array to cycle through history a set No of times i.e 20*/
+
 /* function declarations */
 void printPath();
 void chdirToHome();
@@ -110,7 +113,7 @@ void forkProcess(char* argument, char* paramaters[])
 	}/* end if */
 
 	/*parent process*/
-	if (pid > 0) 
+	if (pid > 0)
 	{
 		wait(0);
 		printf("Parent: %d\n", pid);
@@ -127,13 +130,14 @@ void changeDirectory(char *str)
 	{
 		chdir(getenv("HOME"));
 	}/* end if */
+	else if(chdir(str) < 0)
+	{	
+		perror(str);
+	}/* end if */ 
 	else
 	{
-		chdir(str);
+		printf("\ncurrent working directory is: %s\n", getcwd(cwd, sizeof(cwd)));
 	}/* end else */
-	
-	printf("\ncurrent working directory is: %s\n", getcwd(cwd, sizeof(cwd)));
-
 
 }/* end function */
 
@@ -142,7 +146,19 @@ void exitProgram(char const* storePath)
 	setenv("PATH", storePath, 1);
 	printf("The current path is: %s\n", getenv("PATH"));
 	exit(0);
-}
+
+}/* end function */
+
+
+
+struct historyCycle
+{
+	int countId;
+	char strCommand[512];		
+
+};
+
+
 
 int main(int argc, char *argv[])
 {
@@ -259,10 +275,35 @@ int main(int argc, char *argv[])
 				printf("Error: This command takes one arguement\n");
 			}/*end else */
 		}/* end else if*/
+		else if(strcmp(tokArrayFilename[0], "history") == 0)
+		{
+			if(tokArrayFilename[1] != NULL && tokArrayFilename[2] == NULL)
+			{
+				changeHomeDir(tokArrayFilename[1]);
+			}/*end if */
+			else 
+			{
+				printf("Error: This command takes one arguement\n");
+			}/*end else */
+		}/* end else if */
+		else if(strcmp(tokArrayFilename[0][0], "!") == 0)
+		{
+			if(tokArrayFilename[1] == NULL)
+			{
+				changeHomeDir(tokArrayFilename[1]);
+			}/*end if */
+			else 
+			{
+				printf("Error: This is not a valid command\n");
+			}/*end else */
+		}/* end else if */
 		else
 		{
 			forkProcess(tokArrayFilename[0],tokArrayFilename);
 		}/*end else*/
+
+
+
 
 	}/*end while */
 
