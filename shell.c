@@ -8,6 +8,9 @@
 *************************************************
 */
 
+
+/* Task 5 almost complete, have to implement printing history list and also executing last command */
+
 /* library files required for program execution */
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,7 +21,18 @@
 #include <limits.h>
 
 
-/* notes for task 5: use an array of structs. use no Modulo 20 == index of array to cycle through history a set No of times i.e 20*/
+struct historyCycle
+{
+	int cmdId;
+	char *strCommand;		
+
+};
+
+struct historyCycle history[20];
+int count = 0;
+int historyIndex = 0;
+
+/* notes for task 5: use an array of structs. use no Modulo 20 == historyIndex of array to cycle through history a set No of times i.e 20*/
 
 /* function declarations */
 void printPath();
@@ -150,21 +164,44 @@ void exitProgram(char const* storePath)
 }/* end function */
 
 
-
-struct historyCycle
+void addHistoryCommand(char *historyInput)
 {
-	int countId;
-	char strCommand[512];		
+	if(history[historyIndex].strCommand != NULL)
+	{
+		free(history[historyIndex].strCommand);
+	}/* end if*/
 
-};
+	history[historyIndex].strCommand = strdup(historyInput);
+	history[historyIndex].cmdId = count;
+
+	historyIndex = (historyIndex + 1) % 20;
+	count ++;
+
+}/* end function */
+
+char* searchHistory(int cmdId)
+{
+
+	for(int i = 0; i <= 20 && i >= 0; i++)
+	{
+		if(history[i].cmdId == cmdId)
+		{
+			return history[i].strCommand;
+		}/* end if */
+
+	}/* end for */
+
+	return NULL;
 
 
+}/* end function*/
 
 int main(int argc, char *argv[])
 {
 	/* chars used to determine values which are to be excluded using token delimiter */ 
 	const char tok[9] = " \t|><&;\n";
 	char str[512];
+	char strTemp[512];
 	char *token;
 	int compare = 0;
 	/*char pointer array */
@@ -191,6 +228,8 @@ int main(int argc, char *argv[])
 			exitProgram(storePath);
 
 		}/* end if */
+
+		strcpy(strTemp, str);
 
 		/* surround string with chars to demonstrate beginning and end of words */
 		
@@ -225,8 +264,44 @@ int main(int argc, char *argv[])
 		{
 			printf("<%s>\n", token);
 			token = strtok(NULL, tok);
-		
+					
 		}/* end while */
+		
+		/* if first char = ! execute if */
+		if(tokArrayFilename[0][0] == '!')
+		{
+			if(tokArrayFilename[0][1] == '!')
+			{
+				/* output last command from history */
+				
+
+				
+			}/* end if */
+			else if(tokArrayFilename[0][1] != '!')
+			{	
+				int i = atoi(&tokArrayFilename[0][1]);
+				char* storeHistory = searchHistory(i);
+				if(storeHistory == NULL)
+				{
+					printf("error, history not found");
+				}
+				else
+				{
+					printf("found history %s\n", storeHistory);
+				}
+				 
+			}/* end else if */
+			
+
+	
+		}/* end if */
+		else
+		{
+			/* add command to history */ 
+			addHistoryCommand(strTemp);
+
+		}/* end else */
+
 
 		compare = strcmp(tokArrayFilename[0], "exit"); 
 
@@ -286,11 +361,11 @@ int main(int argc, char *argv[])
 				printf("Error: This command takes one arguement\n");
 			}/*end else */
 		}/* end else if */
-		else if(strcmp(tokArrayFilename[0][0], "!") == 0)
+		else if(tokArrayFilename[0][0] == '!')
 		{
 			if(tokArrayFilename[1] == NULL)
 			{
-				changeHomeDir(tokArrayFilename[1]);
+				addHistoryCommand(tokArrayFilename[1]);
 			}/*end if */
 			else 
 			{
