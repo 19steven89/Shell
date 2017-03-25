@@ -1,5 +1,5 @@
 /************************************************
-*Name: Steven Barry 
+*Name: Steven Barry Daniel Kashani
 *Assignment: Simple Shell Exercise
 *
 *
@@ -7,6 +7,9 @@
 *
 *************************************************
 */
+
+
+/* Task 5 almost complete, have to implement printing history list and also executing last command */
 
 /* library files required for program execution */
 #include <stdio.h>
@@ -16,26 +19,43 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <limits.h>
+#define HISTORYLIMIT 20
+#define RWFROMFILE ".hist_list.txt"
+
+struct historyCycle
+{
+	int cmdId;
+	char *strCommand;		
+};
+
+struct historyCycle history[HISTORYLIMIT];
+int count = 0;
+int historyIndex = 0;
 
 /* function declarations */
-void savePath(char *str, char const* storePath);
+void printPath();
 void chdirToHome();
 void forkProcess(char* arguement, char* paramaters[]);
 void changeHomeDir(char *str);
 void setPathDir(char *setP);
 void changeDirectory(char *str);
+void executeCommand(char *tokArrayFilename[], char const* storePath);
+int tokens (char *tokArrayFilename[], char str[]);
+void saveHistoryToFile();
+void readHistoryFromFile();
 
 
-void savePath(char *str, char const* storePath)
+
+void printPath()
 {
-	if(storePath == NULL)
+	if(getenv("PATH") == NULL)
 	{
 		printf("\nError! Path Not Found");
 
 	}/* end if */
 	else
 	{
-	   	printf("\nPath directories where exe files are located: %s\n", storePath);
+	   	printf("\nPath directories where exe files are located: %s\n", getenv("PATH"));
 	}/* end else */
 
 }/* end method */
@@ -68,33 +88,28 @@ void chdirToHome()
 
 
 
-void changeHomeDir(char *str)
+void changeHomeDir(char* str)
 {
-	char *setP;
-
 	int compare = 0;
 
-	setP = fgets(str, 512, stdin);
-
-	if(strcmp(setP, "\0") == 0)
+	if(strcmp(str, "\0") == 0)
 	{
 		printf("\nError occured, please specify path name.\n");
 
 	}/* end if*/
 	else
 	{
-		setPathDir(setP);
+		setPathDir(str);
 	}/* end else */
 
 }/* end method */
 
 
-void setPathDir(char *setP)
+void setPathDir(char* setP)
 {
-	setenv("PATH", setP, 0);
+	setenv("PATH", setP, 1);
 
-	char *currPath = getenv("PATH");
-	printf("currPath: %s\n", currPath);
+	printf("currPath: %s\n", getenv("PATH"));
 	
 }/* end function */
 
@@ -115,7 +130,7 @@ void forkProcess(char* argument, char* paramaters[])
 	}/* end if */
 
 	/*parent process*/
-	if (pid > 0) 
+	if (pid > 0)
 	{
 		wait(0);
 		printf("Parent: %d\n", pid);
@@ -127,33 +142,306 @@ void forkProcess(char* argument, char* paramaters[])
 
 void changeDirectory(char *str)
 {
-	printf("**TEST** now in changeDirectory function, %s", str);
-	
+	char cwd[300];
+	if(str == NULL)
+	{
+		chdir(getenv("HOME"));
+	}/* end if */
+	else if(chdir(str) < 0)
+	{	
+		perror(str);
+	}/* end if */ 
+	else
+	{
+		printf("\ncurrent working directory is: %s\n", getcwd(cwd, sizeof(cwd)));
+	}/* end else */
 
-	/*if(str[1] == 0)*/
+}/* end function */
 
-
+void exitProgram(char const* storePath)
+{
+	setenv("PATH", storePath, 1);
+	printf("The current path is: %s\n", getenv("PATH"));
+	exit(0);
 
 }/* end function */
 
 
+void addHistoryCommand(char *historyInput)
+{
+	if(history[historyIndex].strCommand != NULL)
+	{
+		free(history[historyIndex].strCommand);
+	}/* end if*/
+
+	history[historyIndex].strCommand = strdup(historyInput);
+	history[historyIndex].cmdId = count;
+	historyIndex = (historyIndex + 1) % 20;
+	count ++;
+
+
+}/* end function */
+
+char* searchHistory(int commandIdInput)
+{
+
+	for(int i = 0; i < HISTORYLIMIT; i++)
+	{
+		if(history[i].cmdId == commandIdInput)
+		{
+			return history[i].strCommand;
+		}/* end if */
+
+	}/* end for */
+
+	/*printf("History Not found");*/
+
+	return NULL;
+
+
+}/* end function*/
+
+
+int historyCommands()
+{
+	int i , k;
+
+	printf("\n");
+
+	for(i = historyIndex; i < HISTORYLIMIT; i++)
+	{
+		if(history[i].strCommand)
+		{
+			printf("%d %s \n",history[i].cmdId, history[i].strCommand);
+		}/* end if */
+
+	}/* end for */	
+	
+	for(k = 0; k < historyIndex; k++)
+	{
+		if(history[k].strCommand)
+		{
+			printf("%d %s \n", history[k].cmdId, history[k].strCommand);
+		}/* end if */
+
+
+	}/* end for */
+
+	return 1;
+
+}/* end function */
+
+
+
+void executeCommand(char *tokArrayFilename[], char const* storePath)
+{
+	
+	int compare = 0;
+
+	compare = strcmp(tokArrayFilename[0], "exit"); 
+
+		/* exit loop if user enters "exit" */
+		if(strcmp(tokArrayFilename[0], "exit") == 0)
+		{
+			if(tokArrayFilename[1] == NULL)
+			{
+				saveHistoryToFile();
+				exitProgram(storePath);
+			}/* end if */
+
+			printf("%s is not a valid command\n", tokArrayFilename[1]);
+
+		}/*end if*/
+
+		else if(strcmp(tokArrayFilename[0], "getpath") == 0)
+		{
+			if(tokArrayFilename[1] == NULL)
+			{
+				printPath();
+			}/*end if */
+			else 
+			{
+				printf("Error: This command takes no arguements\n");
+			}/*end else */
+		}/* end else if */
+		else if(strcmp(tokArrayFilename[0], "setpath") == 0)
+		{
+			if(tokArrayFilename[1] != NULL && tokArrayFilename[2] == NULL)
+			{
+				changeHomeDir(tokArrayFilename[1]);
+			}/*end if */
+			else 
+			{
+				printf("Error: This command takes one arguement\n");
+			}/*end else */
+		}/* end else if*/
+		else if(strcmp(tokArrayFilename[0], "cd") == 0)
+		{
+			if(tokArrayFilename[1] != NULL && tokArrayFilename[2] == NULL || tokArrayFilename[1] == NULL)
+			{
+				changeDirectory(tokArrayFilename[1]);
+			}/*end if */
+			else
+			{
+				printf("Error: This command takes one arguement\n");
+			}/*end else */
+		}/* end else if*/
+		else if(strcmp(tokArrayFilename[0], "history") == 0)
+		{
+			if(tokArrayFilename[1] == NULL)
+			{
+				historyCommands();
+			}/*end if */
+			else
+			{
+				printf("Error: This command takes no arguements\n");
+			}/*end else */
+
+			
+		}/* end else if */
+		else
+		{
+			forkProcess(tokArrayFilename[0],tokArrayFilename);
+		}/*end else*/
+
+}/* end function */
+
+int tokens (char *tokArrayFilename[], char str[])
+{
+	char *token;
+	const char tok[9] = " \t|><&;\n";
+	int i = 0;
+
+	 
+
+	printf("<%s>\n", str);
+		
+	token = strtok(str, tok);
+
+		/* print string until NULL reached */
+
+		while(token != NULL && i <= 50)
+		{
+			printf("<%s>\n", token);
+
+			tokArrayFilename[i] = strdup(token);
+
+			token = strtok(NULL, tok);
+			printf("%s", tokArrayFilename[i]);
+			i++;
+				
+		}/* end while */
+
+		tokArrayFilename[i] = NULL;
+
+
+	
+		/* if user enters NULL value, ensure program continues */
+		if(tokArrayFilename[0] == NULL)
+		{
+			return -1;
+		}/* end if*/
+
+		i = 0;
+
+		while(token != NULL)
+		{
+			printf("<%s>\n", token);
+			token = strtok(NULL, tok);
+					
+		}/* end while */
+
+		return 0;
+}/* end function */
+
+
+void saveHistoryToFile()
+{
+	FILE *filePtr = fopen(RWFROMFILE, "w+");
+	int i = 0;
+	int j = 0;
+
+  	for(i = historyIndex; i < HISTORYLIMIT; i++)
+	{
+    		if(history[i].strCommand)
+		{
+      			fprintf(filePtr, "%d %s",history[i].cmdId, history[i].strCommand);
+			printf("\nadd to file i\n");
+    		}
+  	}
+
+	for(j; j < historyIndex; j++)
+	{
+		if(history[j].strCommand)
+		{
+			fprintf(filePtr, "%d %s",history[j].cmdId, history[j].strCommand);
+			printf("\nadd to file i\n");
+		}
+	}
+
+	/* close file being written to */
+  	fclose(filePtr);
+
+}/*end function */
+
+
+
+
+
+void readHistoryFromFile()
+{
+
+	/* open file for reading */
+	FILE *file_ptr;
+	file_ptr = fopen(RWFROMFILE, "r");
+	char historyString[100];
+
+	if(file_ptr == NULL)
+	{
+		fprintf(stderr, "Error, unable to open file: %s\n", RWFROMFILE);
+		return;
+	}
+	else
+	{
+		printf("%s File opened...\n", RWFROMFILE);
+
+		while(fgets(historyString, sizeof(historyString), file_ptr))
+		{
+			printf("\t%sin while lOOOP", historyString);
+
+			/* for(i = 0; i < HISTORYLIMIT; i++)
+			{
+			    
+			}*/
+			
+
+		}/* end while */
+	}
+	
+
+	/* close the file */
+	fclose(file_ptr); 
+
+}/* end function */
+
+
+
+
+
 int main(int argc, char *argv[])
 {
-	/* chars used to determine values which are to be excluded using token delimiter */ 
-	const char tok[9] = " \t|><&;\n";
+
+	readHistoryFromFile();
 	char str[512];
-	char *token;
-	int compare = 0;
+	char strTemp[512];
+	/* var stores the original path and will restore to original on program exit */
+	char const* storePath = getenv("PATH");
 	/*char pointer array */
 	char *value;
 	char *tokArrayFilename[50];
 	int i = 0;
 	int l = 0;
-	/* var stores the original path and will restore to original on program exit */
-	char const* storePath = getenv("PATH");
-
-
-	savePath(str, storePath);
+	printPath();
 	chdirToHome();
 
 	/* create infinite loop */
@@ -165,90 +453,101 @@ int main(int argc, char *argv[])
 
 		if(value == NULL)
 		{
-			exit(0);
+			exitProgram(storePath);
 
 		}/* end if */
 
-		/* surround string with chars to demonstrate beginning and end of words */
-		
-		printf("<%s>\n", str);
-		
-		token = strtok(str, tok);
+		strcpy(strTemp, str);
 
-		/* print string until NULL reached */
-
-		while(token != NULL && i <= 50)
-		{
-			printf("<%s>\n", token);
-
-			tokArrayFilename[i] = strdup(token);
-
-			token = strtok(NULL, tok);
-			i++;
-				
-		}/* end while */
-
-		tokArrayFilename[i] = NULL;
-
-		/* if user enters NULL value, ensure program continues */
-		if(tokArrayFilename[0] == NULL)
+		if(tokens(tokArrayFilename, str) < 0)
 		{
 			continue;
-		}/* end if*/
-
-		i = 0;
-
-		while(token != NULL)
-		{
-			printf("<%s>\n", token);
-			token = strtok(NULL, tok);
 		
-		}/* end while */
+		}/* end if */
 
-		compare = strcmp(tokArrayFilename[0], "exit"); 
+		
 
-		/* exit loop if user enters "exit" */
-		if(strcmp(tokArrayFilename[0], "exit") == 0)
+		/* if first char = ! execute if */
+		if(tokArrayFilename[0][0] == '!')
 		{
-			if(tokArrayFilename[1] == NULL)
+			if(tokArrayFilename[0][1] == '!')
 			{
-				setenv(storePath, "PATH", 0);
-				printf("The current path is: %s\n", storePath);
+				char* storeHistory = searchHistory(count-1);	
+				
+		
+				if(storeHistory == NULL)
+				{
+					printf("error, history not found");
+				}/* end if */
+				else
+				{
+					printf("found history %s\n", storeHistory);
+					
+					if(tokens(tokArrayFilename, storeHistory) < 0)
+					{
+						continue;
 
-				exit(0);
+					}/* end if */
+				
+					executeCommand(tokArrayFilename,storePath);
+
+				}/* end else */
+
+
 			}/* end if */
 
-			printf("%s is not a valid command\n", tokArrayFilename[1]);
+			else if(tokArrayFilename[0][1] != '!')
+			{	
+				printf("%d %s \n",historyIndex, tokArrayFilename[0]);
+				char* contents_chopped = tokArrayFilename[0] + 1;
+  				char *ptr;
+  				long ret;
 
-		}/*end if*/
+   				ret = strtol(contents_chopped, &ptr, 10);
+   				printf("The number(unsigned long integer) is %ld\n", ret);
+   				printf("String part is |%s|", ptr);
 
-		else if(strcmp(tokArrayFilename[0], "getpath") == 0)
-		{
-				printf("\nelse if: getpath\n");
-				savePath(tokArrayFilename[1], storePath);
-		}/* end else if */
-		else if(strcmp(tokArrayFilename[0], "setpath") == 0)
-		{
-				printf("\nelse if: setpath\n");
-				changeHomeDir(tokArrayFilename[1]);
-		}/* end else if*/
-		else if(strcmp(tokArrayFilename[0], "cd") == 0)
-		{
-				printf("\nelse if: cd\n");
-				changeDirectory(tokArrayFilename[1]);
-		}/* end else if*/
+				printf("%s \n",contents_chopped);
+				
+					int i = atoi(&tokArrayFilename[0][1]);
+					if(i < 0)
+					{
+						i = count + i;
+					}
+					char* storeHistory = searchHistory(i);
+				
+					if(storeHistory == NULL)
+					{
+						printf("error, history not found");
+					}/* end if */
+					else
+					{
+						printf("found history %s\n", storeHistory);
+					}
+					if(tokens(tokArrayFilename, storeHistory) < 0)
+					{
+						continue;
+
+					}/* end if */
+				
+					executeCommand(tokArrayFilename,storePath);
+				 
+			}/* end else if */
+			
+		}/* end if */
 		else
 		{
-			forkProcess(tokArrayFilename[0],tokArrayFilename);
-		}/*end else*/
+			/* add command to history */ 
+			addHistoryCommand(strTemp);
+			executeCommand(tokArrayFilename,storePath);
+
+		}/* end else */
+		
+
 
 	}/*end while */
 
-
-	setenv(storePath, "PATH", 0);
-	printf("The current path is: %s", storePath);
-	
+	saveHistoryToFile();
 	return 0;
 
 }/* end main */
-
