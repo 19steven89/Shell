@@ -1,5 +1,5 @@
 /************************************************
-*Name: Steven Barry Daniel Kashani
+*Group Members Names: Steven Barry Daniel Kashani
 *Assignment: Simple Shell Exercise
 *
 *
@@ -20,6 +20,7 @@
 #include <unistd.h>
 #include <limits.h>
 #define HISTORYLIMIT 20
+#define RWFROMFILE ".hist_list"
 
 struct historyCycle
 {
@@ -40,6 +41,10 @@ void setPathDir(char *setP);
 void changeDirectory(char *str);
 void executeCommand(char *tokArrayFilename[], char const* storePath);
 int tokens (char *tokArrayFilename[], char str[]);
+void saveHistoryToFile();
+void readHistoryFromFile();
+
+
 
 void printPath()
 {
@@ -115,7 +120,7 @@ void forkProcess(char* argument, char* paramaters[])
 
 	/*child process*/
 	if (pid == 0) {
-		printf("Child: %d\n", pid);
+		printf("\nChild: %d\n", pid);
 		if (execvp(argument,paramaters) == -1 )
 		{
 			perror (argument);
@@ -128,7 +133,7 @@ void forkProcess(char* argument, char* paramaters[])
 	if (pid > 0)
 	{
 		wait(0);
-		printf("Parent: %d\n", pid);
+		printf("\nParent: %d\n", pid);
 	}/* end if */
 
 }/* end function */
@@ -188,7 +193,9 @@ char* searchHistory(int commandIdInput)
 		}/* end if */
 
 	}/* end for */
-	//printf("History Not found");
+
+	/*printf("History Not found");*/
+
 	return NULL;
 
 
@@ -238,6 +245,8 @@ void executeCommand(char *tokArrayFilename[], char const* storePath)
 		{
 			if(tokArrayFilename[1] == NULL)
 			{
+				chdirToHome();
+				saveHistoryToFile();
 				exitProgram(storePath);
 			}/* end if */
 
@@ -284,6 +293,11 @@ void executeCommand(char *tokArrayFilename[], char const* storePath)
 			{
 				historyCommands();
 			}/*end if */
+			else
+			{
+				printf("Error: This command takes no arguements\n");
+			}/*end else */
+
 			
 		}/* end else if */
 		else
@@ -298,32 +312,24 @@ int tokens (char *tokArrayFilename[], char str[])
 	char *token;
 	const char tok[9] = " \t|><&;\n";
 	int i = 0;
-
-	 
-
-	printf("<%s>\n", str);
 		
-		token = strtok(str, tok);
-
-
+	token = strtok(str, tok);
 
 		/* print string until NULL reached */
 
 		while(token != NULL && i <= 50)
 		{
-			printf("<%s>\n", token);
 
 			tokArrayFilename[i] = strdup(token);
 
 			token = strtok(NULL, tok);
+			//printf("%s", tokArrayFilename[i]);
 			i++;
 				
 		}/* end while */
 
 		tokArrayFilename[i] = NULL;
 
-
-	
 		/* if user enters NULL value, ensure program continues */
 		if(tokArrayFilename[0] == NULL)
 		{
@@ -340,12 +346,77 @@ int tokens (char *tokArrayFilename[], char str[])
 		}/* end while */
 
 		return 0;
-}
+}/* end function */
+
+
+void saveHistoryToFile()
+{
+	FILE *filePtr;
+	filePtr = fopen(RWFROMFILE, "w");
+	int i = 0;
+	int j = 0;
+
+	if(filePtr == NULL)
+	{
+		fprintf(stdout, "Error, unable to open file to write to...\n");
+		return;
+	}/* end if */
+	else
+	{
+		printf("\n%s File opened for writing...\n", RWFROMFILE);
+
+		for(j; j < historyIndex; j++)
+		{
+			if(history[j].strCommand)
+			{
+				fprintf(filePtr, "\n%d %s", history[j].cmdId, history[j].strCommand);
+			}/* end if */
+		}/* end for */
+
+	}/* end else */
+
+	/* close file being written to */
+  	fclose(filePtr);
+
+}/*end function */
+
+
+void readHistoryFromFile()
+{
+
+	/* open file for reading */
+	FILE *file_ptr;
+	file_ptr = fopen(RWFROMFILE, "r");
+	char historyStringLgth[100];
+	int counter = 0;
+
+
+	if(file_ptr == NULL)
+	{
+		fprintf(stderr, "Error, unable to open file to read from...\n");
+		return;
+	}
+	else
+	{
+		printf("\n%s File opened for reading...\n", RWFROMFILE);
+
+		while(fgets(historyStringLgth, sizeof(historyStringLgth), file_ptr))
+		{
+			history[counter].strCommand = strdup(historyStringLgth);
+			history[counter].cmdId = counter;
+			counter ++;
+		}
+	}
+
+	/* close the file */
+	fclose(file_ptr); 
+
+}/* end function */
 
 int main(int argc, char *argv[])
 {
-
-	
+	chdirToHome();
+	readHistoryFromFile();
 	char str[512];
 	char strTemp[512];
 	/* var stores the original path and will restore to original on program exit */
@@ -355,10 +426,7 @@ int main(int argc, char *argv[])
 	char *tokArrayFilename[50];
 	int i = 0;
 	int l = 0;
-
-
 	printPath();
-	chdirToHome();
 
 	/* create infinite loop */
 	while(1)
@@ -369,6 +437,9 @@ int main(int argc, char *argv[])
 
 		if(value == NULL)
 		{
+			
+			chdirToHome();
+			saveHistoryToFile();
 			exitProgram(storePath);
 
 		}/* end if */
@@ -414,21 +485,32 @@ int main(int argc, char *argv[])
 
 			else if(tokArrayFilename[0][1] != '!')
 			{	
-				int i = atoi(&tokArrayFilename[0][1]);
-				if(i < 0)
-				{
-					i = count + i;
-				}
-				char* storeHistory = searchHistory(i);
+				printf("%d %s \n",historyIndex, tokArrayFilename[0]);
+				char* contents_chopped = tokArrayFilename[0] + 1;
+  				char *ptr;
+  				long ret;
+
+   				ret = strtol(contents_chopped, &ptr, 10);
+   				printf("The number(unsigned long integer) is %ld\n", ret);
+   				printf("String part is |%s|", ptr);
+
+				printf("%s \n",contents_chopped);
 				
-				if(storeHistory == NULL)
-				{
-					printf("error, history not found");
-				}/* end if */
-				else
-				{
-					printf("found history %s\n", storeHistory);
-					
+					int i = atoi(&tokArrayFilename[0][1]);
+					if(i < 0)
+					{
+						i = count + i;
+					}
+					char* storeHistory = searchHistory(i);
+				
+					if(storeHistory == NULL)
+					{
+						printf("error, history not found");
+					}/* end if */
+					else
+					{
+						printf("found history %s\n", storeHistory);
+					}
 					if(tokens(tokArrayFilename, storeHistory) < 0)
 					{
 						continue;
@@ -436,8 +518,6 @@ int main(int argc, char *argv[])
 					}/* end if */
 				
 					executeCommand(tokArrayFilename,storePath);
-
-				}/* end else */
 				 
 			}/* end else if */
 			
@@ -454,6 +534,8 @@ int main(int argc, char *argv[])
 
 	}/*end while */
 
+	chdirToHome();
+	saveHistoryToFile();
 	return 0;
 
 }/* end main */
